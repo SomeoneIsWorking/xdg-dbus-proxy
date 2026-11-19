@@ -188,6 +188,11 @@
       <listitem><para>Make all unique names visible.</para></listitem>
     </varlistentry>
     <varlistentry>
+      <term><option>--peers-talk</option></term>
+      <listitem><para>Give the clients of this proxy the TALK policy for each other's unique
+      names, so processes sharing one filtered bus can call and signal one another.</para></listitem>
+    </varlistentry>
+    <varlistentry>
       <term><option>--see=<replaceable>NAME</replaceable></option></term>
       <listitem><para>Set the SEE policy for the given name.</para></listitem>
     </varlistentry>

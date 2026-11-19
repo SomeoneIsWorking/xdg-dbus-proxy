@@ -61,6 +61,7 @@ usage (int ecode, FILE *out)
            "    --filter                     Enable filtering\n"
            "    --log                        Turn on logging\n"
            "    --sloppy-names               Report name changes for unique names\n"
+           "    --peers-talk                 Let this proxy's clients talk to each other\n"
            "    --see=NAME                   Set 'see' policy for NAME\n"
            "    --talk=NAME                  Set 'talk' policy for NAME\n"
            "    --own=NAME                   Set 'own' policy for NAME\n"
@@ -335,6 +336,11 @@ start_proxy (GPtrArray *args, guint *args_i)
           /* This means we're reporting the name changes for all unique names,
              which is needed for the a11y bus */
           flatpak_proxy_set_sloppy_names (proxy, TRUE);
+          *args_i += 1;
+        }
+      else if (g_str_equal (arg, "--peers-talk"))
+        {
+          flatpak_proxy_set_peers_talk (proxy, TRUE);
           *args_i += 1;
         }
       else

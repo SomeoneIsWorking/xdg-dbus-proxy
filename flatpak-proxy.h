@@ -49,6 +49,8 @@ void         flatpak_proxy_set_filter (FlatpakProxy *proxy,
                                        gboolean      filter);
 void         flatpak_proxy_set_sloppy_names (FlatpakProxy *proxy,
                                              gboolean      sloppy_names);
+void         flatpak_proxy_set_peers_talk   (FlatpakProxy *proxy,
+                                             gboolean      peers_talk);
 void         flatpak_proxy_add_policy (FlatpakProxy *proxy,
                                        const char   *name,
                                        gboolean      name_is_subtree,

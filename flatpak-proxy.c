@@ -398,6 +398,9 @@ struct FlatpakProxyClient
 
   GHashTable *unique_id_policy;
   GHashTable *unique_id_owned_names;
+
+  /* The unique name the bus gave this client, once Hello is answered */
+  char       *unique_id;
 };
 
 typedef struct
@@ -417,6 +420,7 @@ struct FlatpakProxy
 
   gboolean       filter;
   gboolean       sloppy_names;
+  gboolean       peers_talk;
 
   GHashTable    *filters;
 };
@@ -505,6 +509,7 @@ flatpak_proxy_client_finalize (GObject *object)
   g_hash_table_destroy (client->rewrite_reply);
   g_hash_table_destroy (client->get_owner_reply);
   g_hash_table_destroy (client->unique_id_policy);
+  g_free (client->unique_id);
   g_hash_table_destroy (client->unique_id_owned_names);
   g_hash_table_destroy (client->expected_replies_from_bus);
   g_hash_table_destroy (client->expected_replies_from_client);
@@ -580,6 +585,30 @@ flatpak_proxy_set_sloppy_names (FlatpakProxy *proxy,
                                 gboolean      sloppy_names)
 {
   proxy->sloppy_names = sloppy_names;
+}
+
+void
+flatpak_proxy_set_peers_talk (FlatpakProxy *proxy,
+                              gboolean      peers_talk)
+{
+  proxy->peers_talk = peers_talk;
+}
+
+static gboolean
+flatpak_proxy_is_peer (FlatpakProxy *proxy,
+                       const char   *unique_id)
+{
+  GList *l;
+
+  for (l = proxy->clients; l != NULL; l = l->next)
+    {
+      FlatpakProxyClient *peer = l->data;
+
+      if (g_strcmp0 (peer->unique_id, unique_id) == 0)
+        return TRUE;
+    }
+
+  return FALSE;
 }
 
 void
@@ -1928,6 +1957,9 @@ flatpak_proxy_client_get_max_policy_and_matched (FlatpakProxyClient *client,
     {
       /* Default to the unique id policy, i.e. TALK for self, and SEE for trusted peers */
       max_policy = GPOINTER_TO_UINT (g_hash_table_lookup (client->unique_id_policy, source));
+      /* With peers-talk, the clients of this proxy talk to each other's unique names */
+      if (client->proxy->peers_talk && flatpak_proxy_is_peer (client->proxy, source))
+        max_policy = MAX (max_policy, FLATPAK_POLICY_TALK);
       if (max_policy > FLATPAK_POLICY_NONE && matched_filters)
         *matched_filters = g_list_append (*matched_filters, match_all[max_policy]);
 
@@ -2896,6 +2928,8 @@ got_buffer_from_bus (FlatpakProxyClient *client, ProxySide *side, Buffer *buffer
                 {
                   g_autofree char *my_id = get_arg0_string (buffer);
                   flatpak_proxy_client_update_unique_id_policy (client, my_id, FLATPAK_POLICY_TALK);
+                  g_free (client->unique_id);
+                  client->unique_id = g_strdup (my_id);
                 }
               /* ... else it's an ERROR or something. Either way, pass it
                * through to the client unedited. */
